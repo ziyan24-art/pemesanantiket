@@ -152,7 +152,7 @@
                 <h1>🚤 Selamat Datang di <span class="brand">AdamBoat</span></h1>
                 <p class="subtitle">Pesan tiket kapal cepat dengan mudah, aman, dan praktis.</p>
                 <a href="<?= base_url('user/routes') ?>" class="btn-search">
-                    <i class="fas fa-ticket-alt"></i> Pesan Tiket Sekarang
+                    <i class="fas fa-ticket-alt"></i> pencet donk
                 </a>
             </div>
         </div>
