@@ -17,8 +17,10 @@ class EticketController extends BaseController
     // Halaman input pencarian e-tiket
     public function index()
     {
-        return view('admin/messages/index');
+        $transaction = session()->getFlashdata('transaction');
+        return view('admin/messages/index', ['transaction' => $transaction]);
     }
+
 
     // Proses pencarian berdasarkan kode e-tiket
     public function search()
@@ -29,7 +31,6 @@ class EticketController extends BaseController
             return redirect()->back()->with('error', 'Silakan masukkan kode e-tiket.');
         }
 
-        // Join ke bookings dan users (jika ingin nama penumpang)
         $transaction = $this->transactionModel
             ->select('transactions.*, bookings.quantity, bookings.total_price, users.username')
             ->join('bookings', 'bookings.id = transactions.booking_id')
@@ -37,12 +38,14 @@ class EticketController extends BaseController
             ->where('transactions.transaction_code', $kode)
             ->first();
 
-
         if (!$transaction) {
             return redirect()->back()->with('error', 'Kode E-Tiket tidak ditemukan.');
         }
 
-        return view('admin/messages/result', ['transaction' => $transaction]);
+        // gunakan flashdata agar bisa diakses di index
+        return redirect()->to(base_url('messages'))
+            ->with('success', 'Data berhasil ditemukan')
+            ->with('transaction', $transaction);
     }
 
 

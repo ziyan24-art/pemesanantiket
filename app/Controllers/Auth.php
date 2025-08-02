@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Models\UserModel;
-use CodeIgniter\Controller;
 
 class Auth extends BaseController
 {
@@ -15,11 +14,22 @@ class Auth extends BaseController
     public function processRegister()
     {
         $users = new UserModel();
+
+        $email = $this->request->getPost('email');
+
+        // ✅ Cek apakah email sudah digunakan
+        if ($users->where('email', $email)->first()) {
+            return redirect()->back()->withInput()->with('error', 'Email sudah terdaftar, gunakan email lain.');
+        }
+
+        // ✅ Simpan user baru dengan role default = user
         $users->insert([
-            'username' => $this->request->getPost('username'),
-            'email' => $this->request->getPost('email'),
-            'password' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
-            'role' => $this->request->getPost('role'),
+            'username'   => $this->request->getPost('username'),
+            'email'      => $email,
+            'password'   => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
+            'role'       => 'user', // default role
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
         return redirect()->to('/login')->with('success', 'Pendaftaran berhasil, silakan login!');
@@ -39,20 +49,19 @@ class Auth extends BaseController
         $user = $users->where('email', $email)->first();
 
         if ($user && password_verify($password, $user['password'])) {
+            // ✅ Set session login
             session()->set([
-                'id' => $user['id'],
-                'username' => $user['username'],
-                'role' => $user['role'],
+                'id'        => $user['id'],
+                'username'  => $user['username'],
+                'role'      => $user['role'],
                 'isLoggedIn' => true,
             ]);
 
-            // Redirect universal ke Dashboard (role ditangani di controller)
             return redirect()->to('/dashboard');
         }
 
         return redirect()->back()->with('error', 'Login gagal! Email atau password salah.');
     }
-
 
     public function logout()
     {

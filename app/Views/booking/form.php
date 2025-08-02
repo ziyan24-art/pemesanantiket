@@ -135,6 +135,14 @@
             color: white;
         }
 
+        /* Preview gambar */
+        #preview {
+            margin-top: 10px;
+            max-width: 200px;
+            border-radius: 8px;
+            display: none;
+        }
+
         /* Loading Screen */
         #loading-screen {
             position: fixed;
@@ -177,7 +185,7 @@
             left: -40%;
             width: 50%;
             height: 100%;
-            background-color:rgb(32, 140, 241);
+            background-color: rgb(32, 140, 241);
             animation: loading 2s infinite;
         }
 
@@ -212,7 +220,6 @@
 <body>
 
     <!-- Loading Screen -->
-    <!-- Loading Screen -->
     <div id="loading-screen">
         <div class="logo-container">
             <i class="fas fa-ship fa-3x text-primary mb-3"></i>
@@ -221,12 +228,11 @@
         </div>
     </div>
 
-
     <div class="container">
         <h2>Form Pembayaran</h2>
         <a href="<?= base_url('/') ?>" class="back-button"><- Kembali</a>
 
-                <form id="paymentForm" action="<?= base_url('booking/submit') ?>" method="post">
+                <form id="paymentForm" action="<?= base_url('booking/submit') ?>" method="post" enctype="multipart/form-data">
                     <?= csrf_field() ?>
                     <input type="hidden" name="route_id" value="<?= esc($rute['id']) ?>">
 
@@ -244,6 +250,7 @@
                         <label>Nomor HP / WA:</label>
                         <input type="tel" name="phone" required>
                     </div>
+
                     <div>
                         <label>Tanggal Keberangkatan:</label>
                         <input type="date" name="departure_date" required>
@@ -263,16 +270,23 @@
                         <input type="hidden" name="total_price" id="total_price">
                     </div>
 
-                    <div class="mb-3">
+                    <div>
                         <label class="form-label">Metode Pembayaran:</label>
-                        <select name="payment_method" class="form-select" required>
+                        <select name="payment_method" id="payment_method" class="form-select" required>
                             <option value="">-- Pilih --</option>
                             <?php foreach ($methods as $m): ?>
-                                <option value="<?= esc($m['id']) ?>">
+                                <option value="<?= esc($m['id']) ?>" data-bank="<?= strtolower($m['nama_bank']) ?>">
                                     <?= esc($m['nama_bank']) ?> (<?= esc($m['no_rek']) ?>)
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+
+                    <!-- Upload Bukti -->
+                    <div class="full" id="upload-wrapper" style="display:none;">
+                        <label>Bukti Pembayaran:</label>
+                        <input type="file" name="payment_proof" id="payment_proof" accept="image/*">
+                        <img id="preview" alt="Preview Bukti">
                     </div>
 
                     <div class="full">
@@ -292,6 +306,10 @@
             const pricePerSeat = <?= json_encode((int)$rute['price']) ?>;
             const form = document.getElementById('paymentForm');
             const loadingScreen = document.getElementById('loading-screen');
+            const paymentMethod = document.getElementById('payment_method');
+            const buktiInput = document.getElementById('payment_proof');
+            const uploadWrapper = document.getElementById('upload-wrapper');
+            const preview = document.getElementById('preview');
 
             function updateTotal() {
                 const qty = parseInt(seatQtyInput.value) || 0;
@@ -303,6 +321,34 @@
             seatQtyInput.addEventListener('input', updateTotal);
             updateTotal();
 
+            // Atur wajib upload sesuai metode pembayaran
+            paymentMethod.addEventListener('change', function() {
+                const selected = paymentMethod.options[paymentMethod.selectedIndex].text.toLowerCase();
+                if (selected.includes('cash')) {
+                    uploadWrapper.style.display = 'none';
+                    buktiInput.required = false;
+                } else {
+                    uploadWrapper.style.display = 'block';
+                    buktiInput.required = true;
+                }
+            });
+
+            // Preview gambar
+            buktiInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    preview.src = "";
+                    preview.style.display = 'none';
+                }
+            });
+
             // Saat form submit, tampilkan loading screen
             form.addEventListener('submit', function() {
                 loadingScreen.style.display = 'flex';
@@ -312,14 +358,12 @@
             // Saat halaman pertama kali load
             loadingScreen.style.display = 'flex';
             window.addEventListener("load", function() {
-                // delay biar efek fade lebih halus
                 setTimeout(() => {
                     loadingScreen.style.display = 'none';
                 }, 800);
             });
         });
     </script>
-
 
 </body>
 

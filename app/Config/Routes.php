@@ -51,13 +51,31 @@ $routes->group('admin', function ($routes) {
     $routes->get('popular-ticket/delete/(:num)', 'Admin\PopularTicketController::delete/$1');
 });
 $routes->group('admin', function ($routes) {
+    // ✅ Kelola Payment Method
     $routes->get('paymentmethod', 'Admin\PaymentMethod::index');
     $routes->get('paymentmethod/create', 'Admin\PaymentMethod::create');
     $routes->post('paymentmethod/store', 'Admin\PaymentMethod::store');
     $routes->get('paymentmethod/edit/(:num)', 'Admin\PaymentMethod::edit/$1');
     $routes->post('paymentmethod/update/(:num)', 'Admin\PaymentMethod::update/$1');
     $routes->get('paymentmethod/delete/(:num)', 'Admin\PaymentMethod::delete/$1');
+
+    // ✅ Kelola Order
+    $routes->get('orders', 'Admin\OrderController::index');
+    $routes->post('orders/update-status/(:num)', 'Admin\OrderController::updateStatus/$1');
+    $routes->get('orders/delete/(:num)', 'Admin\OrderController::delete/$1');
+
+ 
 });
+$routes->group('admin', function ($routes) {
+    $routes->get('laporan-transaksi', 'LaporanTransaksi::index');
+    $routes->get('laporan-transaksi/export', 'LaporanTransaksi::exportExcel');
+    $routes->get('laporan-transaksi/pdf', 'LaporanTransaksi::exportPDF');
+
+    $routes->get('pemasukan', 'LaporanTransaksi::pemasukan');
+});
+
+
+
 
 
 
@@ -83,3 +101,5 @@ $routes->get('/booking/success/(:num)', 'Booking::success/$1');
 
 // Cetak E-Tiket berdasarkan Kode Unik
 $routes->get('/booking/print/(:segment)', 'Booking::print/$1');
+
+$routes->get('/riwayat', 'Booking::riwayat');

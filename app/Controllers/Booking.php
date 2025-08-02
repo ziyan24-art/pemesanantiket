@@ -25,21 +25,21 @@ class Booking extends BaseController
             return redirect()->to('/login')->with('error', 'Silakan login terlebih dahulu untuk memesan tiket.');
         }
 
-        $ruteModel = new \App\Models\Rute();
+        $ruteModel = new Rute();
         $rute = $ruteModel->find($id);
         if (!$rute) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Rute tidak ditemukan.');
         }
 
-        // 🔹 ambil metode pembayaran aktif
+        // 🔹 Ambil metode pembayaran aktif
         $paymentModel = new PaymentMethodModel();
         $methods = $paymentModel->where('status', 'aktif')->findAll();
 
         return view('booking/form', [
-            'rute' => $rute,
-            'max_kursi' => $rute['seat_quota'],
+            'rute'            => $rute,
+            'max_kursi'       => $rute['seat_quota'],
             'harga_per_kursi' => $rute['price'],
-            'methods' => $methods
+            'methods'         => $methods
         ]);
     }
 
@@ -49,7 +49,7 @@ class Booking extends BaseController
         $bookingModel     = new BookingModel();
         $transactionModel = new TransactionModel();
         $routeModel       = new Rute();
-        $paymentModel     = new \App\Models\PaymentMethodModel();
+        $paymentModel     = new PaymentMethodModel();
 
         // Ambil user ID dari session
         $userId = session('id');
@@ -60,9 +60,9 @@ class Booking extends BaseController
         // Ambil input dari form
         $routeId         = $this->request->getPost('route_id');
         $quantity        = (int) $this->request->getPost('seat_qty');
-        $paymentMethodId = $this->request->getPost('payment_method'); // ID dari tabel payment_methods
+        $paymentMethodId = $this->request->getPost('payment_method');
         $formTotal       = (int) $this->request->getPost('total_price');
-        $departureDate   = $this->request->getPost('departure_date'); // ✅ tambahkan tanggal
+        $departureDate   = $this->request->getPost('departure_date');
 
         // Validasi tanggal keberangkatan
         if (!$departureDate || !strtotime($departureDate)) {
@@ -86,7 +86,7 @@ class Booking extends BaseController
             return redirect()->back()->withInput()->with('error', 'Total pembayaran tidak valid.');
         }
 
-        // Cek apakah metode pembayaran valid
+        // Validasi metode pembayaran
         $paymentMethod = $paymentModel->find($paymentMethodId);
         if (!$paymentMethod) {
             return redirect()->back()->withInput()->with('error', 'Metode pembayaran tidak valid.');
@@ -96,24 +96,44 @@ class Booking extends BaseController
         $bookingData = [
             'user_id'        => $userId,
             'route_id'       => $routeId,
-            'departure_date' => $departureDate, // ✅ simpan tanggal
+            'departure_date' => $departureDate,
             'quantity'       => $quantity,
             'total_price'    => $expectedTotal
         ];
         $bookingModel->insert($bookingData);
         $bookingId = $bookingModel->getInsertID();
 
-        // Status transaksi: kalau bayar di loket = pending, kalau transfer = waiting_payment
-        $status = (strtolower($paymentMethod['nama_bank']) === 'loket' || strtolower($paymentMethod['nama_bank']) === 'cash')
-            ? 'pending'
-            : 'waiting_payment';
+        // Tentukan status transaksi
+        $bankName = strtolower($paymentMethod['nama_bank']);
+        $isCash   = in_array($bankName, ['loket', 'cash']);
+        $status   = $isCash ? 'paid' : 'pending';
+
+        // 🔹 Upload bukti pembayaran jika bukan cash/loket
+        $proofFile = $this->request->getFile('payment_proof');
+        $proofPath = null;
+
+        if (!$isCash) {
+            if (!$proofFile || !$proofFile->isValid()) {
+                return redirect()->back()->withInput()->with('error', 'Harap upload bukti pembayaran.');
+            }
+
+            if (!in_array($proofFile->getExtension(), ['jpg', 'jpeg', 'png', 'pdf'])) {
+                return redirect()->back()->withInput()->with('error', 'Format bukti pembayaran harus JPG, PNG, atau PDF.');
+            }
+
+            // Simpan file bukti
+            $newName   = $proofFile->getRandomName();
+            $proofFile->move('uploads/bukti', $newName);
+            $proofPath = 'uploads/bukti/' . $newName;
+        }
 
         // Simpan transaksi
         $transactionData = [
             'booking_id'       => $bookingId,
-            'payment_method'   => $paymentMethodId, // simpan ID metode
+            'payment_method'   => $paymentMethodId,
             'status'           => $status,
-            'transaction_code' => strtoupper(uniqid('ETK'))
+            'transaction_code' => strtoupper(uniqid('ETK')),
+            'payment_proof'    => $proofPath
         ];
         $transactionModel->insert($transactionData);
 
@@ -121,7 +141,6 @@ class Booking extends BaseController
         $newQuota = $route['seat_quota'] - $quantity;
         $routeModel->update($routeId, ['seat_quota' => $newQuota]);
 
-        // Redirect ke success
         return redirect()->to("/booking/success/{$bookingId}");
     }
 
@@ -132,9 +151,10 @@ class Booking extends BaseController
     {
         $bookingModel     = new BookingModel();
         $transactionModel = new TransactionModel();
-        $routeModel       = new \App\Models\Rute();
-        $paymentModel     = new \App\Models\PaymentMethodModel();
+        $routeModel       = new Rute();
+        $paymentModel     = new PaymentMethodModel();
 
+        // Ambil booking dan transaksi
         $booking     = $bookingModel->find($id);
         $transaction = $transactionModel->where('booking_id', $id)->first();
 
@@ -142,14 +162,22 @@ class Booking extends BaseController
             return redirect()->to('/')->with('error', 'Data booking tidak ditemukan.');
         }
 
-        // Ambil data rute terkait
+        // Ambil data rute
         $route = $routeModel->find($booking['route_id']);
 
-        // Ambil data metode pembayaran
+        // Ambil data metode pembayaran (jika ada)
         $paymentMethod = null;
         if (!empty($transaction['payment_method'])) {
             $paymentMethod = $paymentModel->find($transaction['payment_method']);
         }
+
+        // Mapping status agar lebih user-friendly
+        $statusLabel = [
+            'pending' => '⚠️ Menunggu pembayaran',
+            'paid'    => '✅ Pembayaran diterima',
+        ];
+
+        $transaction['status_label'] = $statusLabel[$transaction['status']] ?? ucfirst($transaction['status']);
 
         return view('booking/success', [
             'booking'       => $booking,
@@ -160,13 +188,12 @@ class Booking extends BaseController
     }
 
 
-
     // Menampilkan halaman cetak tiket
     public function print($code)
     {
         $transactionModel = new TransactionModel();
         $bookingModel     = new BookingModel();
-        $routeModel       = new \App\Models\Rute();
+        $routeModel       = new Rute();
 
         // Cari transaksi berdasarkan kode
         $transaction = $transactionModel->where('transaction_code', $code)->first();
@@ -180,13 +207,48 @@ class Booking extends BaseController
             return redirect()->to('/')->with('error', 'Data booking tidak ditemukan.');
         }
 
-        // Ambil data rute terkait
+        // Ambil data rute
         $route = $routeModel->find($booking['route_id']);
 
         return view('booking/print', [
             'booking'     => $booking,
             'transaction' => $transaction,
             'route'       => $route
+        ]);
+    }
+
+    public function riwayat()
+    {
+        $userId = session()->get('id'); // ✅ ambil user login
+
+        if (!$userId) {
+            return redirect()->to('/login')->with('error', 'Silakan login terlebih dahulu.');
+        }
+
+        $bookingModel     = new BookingModel();
+        $transactionModel = new TransactionModel();
+        $routeModel       = new Rute();
+        $paymentModel     = new PaymentMethodModel();
+
+        // Ambil semua booking user
+        $bookings = $bookingModel->where('user_id', $userId)->orderBy('created_at', 'DESC')->findAll();
+
+        $riwayat = [];
+        foreach ($bookings as $b) {
+            $transaction = $transactionModel->where('booking_id', $b['id'])->first();
+            $route       = $routeModel->find($b['route_id']);
+            $payment     = $transaction ? $paymentModel->find($transaction['payment_method']) : null;
+
+            $riwayat[] = [
+                'booking'     => $b,
+                'transaction' => $transaction,
+                'route'       => $route,
+                'payment'     => $payment
+            ];
+        }
+
+        return view('user/riwayat', [
+            'riwayat' => $riwayat
         ]);
     }
 }

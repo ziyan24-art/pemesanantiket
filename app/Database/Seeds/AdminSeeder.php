@@ -11,13 +11,29 @@ class AdminSeeder extends Seeder
     {
         $userModel = new UserModel();
 
-        $userModel->insert([
-            'name' => 'Admin',
-            'username' => 'admin',
-            'email' => 'admin@example.com',
-            'password' => password_hash('admin123', PASSWORD_DEFAULT),
-            'role' => 'admin',
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
+        $users = [
+            [
+                'name' => 'Admin',
+                'username' => 'admin',
+                'email' => 'admin@example.com',
+                'password' => password_hash('admin123', PASSWORD_DEFAULT),
+                'role' => 'admin',
+                'created_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'name' => 'Pemilik',
+                'username' => 'pemilik',
+                'email' => 'pemilik@example.com',
+                'password' => password_hash('pemilik123', PASSWORD_DEFAULT),
+                'role' => 'pemilik',
+                'created_at' => date('Y-m-d H:i:s')
+            ]
+        ];
+
+        foreach ($users as $user) {
+            if (!$userModel->where('email', $user['email'])->first()) {
+                $userModel->insert($user);
+            }
+        }
     }
 }

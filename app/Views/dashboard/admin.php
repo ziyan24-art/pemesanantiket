@@ -3,7 +3,7 @@
 <?= $this->include('layouts/topbar') ?>
 
 <main class="content">
-    <h1>Welcome Admin, <?= htmlspecialchars(session()->get('username')) ?></h1>
+    <h1>Welcome <?= htmlspecialchars(session()->get('username')) ?></h1>
     <p>Selamat datang di dashboard admin Anda. Gunakan menu di samping untuk navigasi.</p>
 </main>
 

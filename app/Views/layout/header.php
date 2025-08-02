@@ -8,7 +8,7 @@
     <title>AdamBoat - Pemesanan Tiket</title>
     <link rel="stylesheet" href="<?= base_url('/css/style.css') ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-   
+
 
     <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -107,6 +107,7 @@
                     <ul>
                         <li><a href="<?= base_url('/') ?>">Beranda</a></li>
                         <li><a href="<?= base_url('user/routes') ?>">Rute</a></li>
+                        <li><a href="<?= base_url('riwayat') ?>">Riwayat Transaksi</a></li>
 
                         <?php if (session()->has('isLoggedIn') && session('isLoggedIn') === true): ?>
                             <li><a href="<?= base_url('logout') ?>">Logout</a></li>

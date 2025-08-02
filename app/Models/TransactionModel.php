@@ -6,17 +6,22 @@ use CodeIgniter\Model;
 
 class TransactionModel extends Model
 {
-    protected $table            = 'transactions';
-    protected $primaryKey       = 'id';
+    protected $table      = 'transactions';
+    protected $primaryKey = 'id';
 
-    protected $allowedFields    = [
+    protected $allowedFields = [
         'booking_id',
         'payment_method',
         'status',
         'transaction_code',
+        'payment_proof',     // bukti transfer
+        'boarding_status',
         'created_at',
-        'boarding_status'
+        'updated_at'
     ];
 
-    protected $useTimestamps = false; // Karena pakai default CURRENT_TIMESTAMP dari DB
+    // ✅ Aktifkan otomatis timestamp
+    protected $useTimestamps = true;
+    protected $createdField  = 'created_at';
+    protected $updatedField  = '';
 }

@@ -133,18 +133,17 @@
 
 <div class="register-container">
     <h2>Register</h2>
+    <?php if (session()->getFlashdata('error')): ?>
+        <p style="color:red;"><?= session()->getFlashdata('error'); ?></p>
+    <?php endif; ?>
     <form method="post" action="/register">
+        <?= csrf_field() ?>
         <input type="text" name="username" placeholder="Username" required>
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="password" placeholder="Password" required>
-        <select name="role" required>
-            <option value="" disabled selected>Pilih Role</option>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-            <option value="pemilik">Pemilik</option>
-        </select>
         <button type="submit">Register</button>
     </form>
+
 
     <p class="login-link">
         Sudah punya akun? <a href="/login">Login di sini</a>

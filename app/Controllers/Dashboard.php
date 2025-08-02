@@ -32,7 +32,7 @@ class Dashboard extends BaseController
                 return view('user/dashboard', $data);
 
             case 'pemilik':
-                return view('dashboard/pemilik', ['title' => 'Dashboard Pemilik']);
+                return view('dashboard/admin', ['title' => 'Dashboard Pemilik']);
 
             default:
                 return redirect()->to('/login');

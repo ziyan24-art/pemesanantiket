@@ -18,20 +18,20 @@
             padding: 0;
         }
 
-        /* Card Success */
         .success-card {
-            max-width: 700px;
-            margin: 80px auto;
+            max-width: 750px;
+            margin: 60px auto;
             border-radius: 16px;
             overflow: hidden;
             border: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
             animation: fadeInUp 0.8s ease-in-out;
         }
 
         .success-header {
             background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
-            padding: 30px;
+            padding: 40px 20px;
             text-align: center;
         }
 
@@ -40,27 +40,35 @@
             font-weight: bold;
         }
 
+        .success-header p {
+            margin-top: 8px;
+            font-size: 15px;
+            opacity: 0.9;
+        }
+
         .ticket-info p {
             margin-bottom: 8px;
             font-size: 16px;
         }
 
         .ticket-code {
-            background: #f1f3f6;
+            background: #f8f9fa;
             border: 2px dashed #6c757d;
-            padding: 15px;
-            border-radius: 10px;
+            padding: 18px;
+            border-radius: 12px;
             text-align: center;
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
             letter-spacing: 2px;
+            color: #212529;
         }
 
         .btn-print {
             background: #28a745;
             border: none;
             font-weight: 600;
-            padding: 10px 20px;
+            padding: 12px 22px;
+            border-radius: 10px;
         }
 
         .btn-print:hover {
@@ -71,7 +79,8 @@
             background: #6c757d;
             border: none;
             font-weight: 600;
-            padding: 10px 20px;
+            padding: 12px 22px;
+            border-radius: 10px;
             margin-left: 10px;
         }
 
@@ -79,7 +88,6 @@
             background: #5a6268;
         }
 
-        /* Animasi muncul */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -95,56 +103,88 @@
 </head>
 
 <body>
-    <div class="card shadow success-card">
+    <div class="card success-card">
         <div class="success-header">
-            <h3>✅ Pemesanan Berhasil!</h3>
-            <p class="mb-0">Terima kasih telah melakukan pemesanan tiket speedboat</p>
+            <h3><i class="fa-solid fa-circle-check"></i> Pemesanan Berhasil!</h3>
+            <p class="mb-0">Terima kasih telah melakukan pemesanan tiket speedboat 🚤</p>
         </div>
-        <div class="card-body">
+        <div class="card-body p-4">
+            <h5 class="mb-3"><i class="fa-solid fa-ticket"></i> Detail Tiket</h5>
             <div class="ticket-info">
-                <p><strong>Jumlah Penumpang:</strong> <?= $booking['quantity'] ?></p>
-                <p><strong>Total:</strong> Rp<?= number_format($booking['total_price'], 0, ',', '.') ?></p>
+                <p><strong><i class="fa-solid fa-user-group"></i> Jumlah Penumpang:</strong> <?= $booking['quantity'] ?></p>
+                <p><strong><i class="fa-solid fa-money-bill-wave"></i> Total:</strong> Rp<?= number_format($booking['total_price'], 0, ',', '.') ?></p>
 
                 <?php if (!empty($booking['departure_date'])): ?>
-                    <p><strong>Tanggal Keberangkatan:</strong>
+                    <p><strong><i class="fa-solid fa-calendar-day"></i> Tanggal Keberangkatan:</strong>
                         <?= date('d-m-Y', strtotime($booking['departure_date'])) ?>
                     </p>
                 <?php endif; ?>
 
                 <?php if (!empty($route) && !empty($route['jam_berangkat'])): ?>
-                    <p><strong>Jam Keberangkatan:</strong>
+                    <p><strong><i class="fa-solid fa-clock"></i> Jam Keberangkatan:</strong>
                         <?= date('H:i', strtotime($route['jam_berangkat'])) ?> WIB
                     </p>
                 <?php endif; ?>
             </div>
 
             <hr>
-            <h5 class="mb-3">Detail Pembayaran</h5>
+            <h5 class="mb-3"><i class="fa-solid fa-credit-card"></i> Detail Pembayaran</h5>
             <?php if (!empty($paymentMethod)): ?>
                 <p><strong>Bank:</strong> <?= esc($paymentMethod['nama_bank']) ?></p>
                 <p><strong>No Rekening:</strong> <?= esc($paymentMethod['no_rek']) ?></p>
                 <p><strong>Status:</strong>
-                    <span class="badge bg-<?= $transaction['status'] == 'paid' ? 'success' : 'warning' ?>">
+                    <?php
+                    $badgeClass = 'warning';
+                    $statusMessage = '';
+
+                    switch ($transaction['status']) {
+                        case 'paid':
+                            $badgeClass = 'success';
+                            $statusMessage = '<small class="text-success">✅ Pembayaran sudah diterima, tiket Anda aktif.</small>';
+                            break;
+                        case 'pending':
+                            $badgeClass = 'warning';
+                            $statusMessage = '<small class="text-warning">⚠️ Menunggu pembayaran. Silakan selesaikan pembayaran agar tiket aktif.</small>';
+                            break;
+                        case 'failed':
+                            $badgeClass = 'danger';
+                            $statusMessage = '<small class="text-danger">❌ Pembayaran gagal. Silakan coba lagi atau gunakan metode lain.</small>';
+                            break;
+                        default:
+                            $badgeClass = 'secondary';
+                            $statusMessage = '<small class="text-muted">ℹ️ Status tidak diketahui.</small>';
+                            break;
+                    }
+                    ?>
+                    <span class="badge bg-<?= $badgeClass ?> px-3 py-2">
                         <?= ucfirst($transaction['status']) ?>
                     </span>
                 </p>
+
+                <?= $statusMessage ?>
+
+
             <?php else: ?>
                 <p><strong>Metode:</strong> <?= ucfirst($transaction['payment_method']) ?></p>
-                <p><strong>Status:</strong> <?= ucfirst($transaction['status']) ?></p>
+                <p><strong>Status:</strong>
+                    <span class="badge bg-<?= $transaction['status'] == 'paid' ? 'success' : 'warning' ?> px-3 py-2">
+                        <?= ucfirst($transaction['status']) ?>
+                    </span>
+                </p>
             <?php endif; ?>
 
             <hr>
-            <h5 class="mb-3">Kode E-Tiket</h5>
+            <h5 class="mb-3"><i class="fa-solid fa-barcode"></i> Kode E-Tiket</h5>
             <div class="ticket-code mb-3">
                 <?= $transaction['transaction_code'] ?>
             </div>
 
-            <div class="d-flex justify-content-center">
+            <div class="d-flex justify-content-center mt-4">
                 <a href="/booking/print/<?= $transaction['transaction_code'] ?>" class="btn btn-print" target="_blank">
-                    🖨 Print / Download Tiket
+                    <i class="fa-solid fa-print"></i> Print / Download Tiket
                 </a>
                 <a href="/" class="btn btn-back">
-                    ⬅ Kembali ke Beranda
+                    <i class="fa-solid fa-house"></i> Kembali ke Beranda
                 </a>
             </div>
         </div>

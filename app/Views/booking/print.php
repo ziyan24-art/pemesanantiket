@@ -91,15 +91,22 @@
         <p><strong>Jumlah Penumpang:</strong> <?= $booking['quantity'] ?></p>
         <p><strong>Total Harga:</strong> Rp<?= number_format($booking['total_price'], 0, ',', '.') ?></p>
 
-        <?php if (!empty($booking['departure_date'])): ?>
+        <?php if (!empty($route['asal']) && !empty($route['tujuan'])): ?>
+            <p><strong>Rute:</strong> <?= $route['asal'] ?> ➝ <?= $route['tujuan'] ?></p>
+        <?php endif; ?>
+
+        <?php if (!empty($booking['departure_date']) && !empty($route['jam_berangkat'])): ?>
+            <p><strong>Keberangkatan:</strong>
+                <?= date('d-m-Y', strtotime($booking['departure_date'])) ?> |
+                <?= date('H:i', strtotime($route['jam_berangkat'])) ?> WIB
+            </p>
+        <?php elseif (!empty($booking['departure_date'])): ?>
             <p><strong>Tanggal Keberangkatan:</strong>
                 <?= date('d-m-Y', strtotime($booking['departure_date'])) ?>
             </p>
-        <?php endif; ?>
-
-        <?php if (!empty($route['jam_berangkat'])): ?>
+        <?php elseif (!empty($route['jam_berangkat'])): ?>
             <p><strong>Jam Keberangkatan:</strong>
-                <?= date('H:i', strtotime($route['jam_berangkat'])) ?> WITA
+                <?= date('H:i', strtotime($route['jam_berangkat'])) ?> WIB
             </p>
         <?php endif; ?>
 
@@ -108,6 +115,7 @@
         </div>
 
         <em>Tunjukkan tiket ini saat naik speedboat 🚤</em>
+        <em>*Tolong Konfirmasi tiket 30 menit sebelum keberangkatan</em>
     </div>
 
     <script>
